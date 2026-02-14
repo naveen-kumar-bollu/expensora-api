@@ -36,4 +36,7 @@ build/
 application.properties
 .env
 *.env
+.env.*
 !application.properties.example
+*.ps1
+test-neon-connection.ps1
