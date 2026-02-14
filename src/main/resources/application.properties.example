@@ -1,0 +1,36 @@
+spring.application.name=expensora-api
+
+# Database Configuration
+# For local development, create a PostgreSQL database and update these values
+# For production (Render), use the DATABASE_URL environment variable
+spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/expensora}
+spring.datasource.username=${DB_USERNAME:postgres}
+spring.datasource.password=${DB_PASSWORD:your_password_here}
+spring.jpa.hibernate.ddl-auto=${DDL_AUTO:update}
+spring.jpa.show-sql=${SHOW_SQL:false}
+
+# JWT Configuration
+# IMPORTANT: Generate a secure 256-bit secret using: openssl rand -hex 32
+# Never commit the actual secret to Git!
+jwt.secret=${JWT_SECRET:generate_your_own_256bit_secret_here}
+jwt.expiration=${JWT_EXPIRATION:36000000}
+jwt.refresh-expiration=${JWT_REFRESH_EXPIRATION:604800000}
+
+# Server Configuration
+server.port=${PORT:8080}
+
+# ========================================
+# SETUP INSTRUCTIONS
+# ========================================
+# 1. Copy this file to application.properties
+# 2. Replace placeholder values with your actual configuration
+# 3. Never commit application.properties to Git (it's in .gitignore)
+#
+# Environment Variables (for production deployment):
+# - DATABASE_URL: Full PostgreSQL connection string
+# - DB_USERNAME: Database username
+# - DB_PASSWORD: Database password
+# - JWT_SECRET: Secure 256-bit secret for JWT signing
+# - JWT_EXPIRATION: Access token expiration (milliseconds)
+# - JWT_REFRESH_EXPIRATION: Refresh token expiration (milliseconds)
+# - PORT: Server port (default: 8080)
