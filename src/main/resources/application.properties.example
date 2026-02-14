@@ -2,12 +2,20 @@ spring.application.name=expensora-api
 
 # Database Configuration
 # For local development, create a PostgreSQL database and update these values
-# For production (Render), use the DATABASE_URL environment variable
+# For production (Render/Neon), use environment variables
 spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/expensora}
 spring.datasource.username=${DB_USERNAME:postgres}
 spring.datasource.password=${DB_PASSWORD:your_password_here}
+spring.datasource.driver-class-name=${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.postgresql.Driver}
+
+# JPA/Hibernate Configuration
 spring.jpa.hibernate.ddl-auto=${DDL_AUTO:update}
 spring.jpa.show-sql=${SHOW_SQL:false}
+spring.jpa.database-platform=${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
+
+# Disable H2 (use PostgreSQL only)
+spring.autoconfigure.exclude=${SPRING_AUTOCONFIGURE_EXCLUDE:}
 
 # JWT Configuration
 # IMPORTANT: Generate a secure 256-bit secret using: openssl rand -hex 32
@@ -19,6 +27,9 @@ jwt.refresh-expiration=${JWT_REFRESH_EXPIRATION:604800000}
 # Server Configuration
 server.port=${PORT:8080}
 
+# CORS Configuration
+cors.allowed-origins=${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+
 # ========================================
 # SETUP INSTRUCTIONS
 # ========================================
@@ -26,11 +37,22 @@ server.port=${PORT:8080}
 # 2. Replace placeholder values with your actual configuration
 # 3. Never commit application.properties to Git (it's in .gitignore)
 #
-# Environment Variables (for production deployment):
-# - DATABASE_URL: Full PostgreSQL connection string
+# ========================================
+# PRODUCTION ENVIRONMENT VARIABLES (Render/Neon PostgreSQL)
+# ========================================
+# Required variables:
+# - DATABASE_URL: jdbc:postgresql://host/database?sslmode=require
 # - DB_USERNAME: Database username
 # - DB_PASSWORD: Database password
-# - JWT_SECRET: Secure 256-bit secret for JWT signing
-# - JWT_EXPIRATION: Access token expiration (milliseconds)
-# - JWT_REFRESH_EXPIRATION: Refresh token expiration (milliseconds)
-# - PORT: Server port (default: 8080)
+# - SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+# - SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+# - SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.h2.H2ConsoleAutoConfiguration
+# - DDL_AUTO: none (after initial schema setup)
+# - JWT_SECRET: Secure 256-bit secret (openssl rand -hex 32)
+# - CORS_ALLOWED_ORIGINS: https://your-app.vercel.app
+#
+# Note: For Neon PostgreSQL, convert the connection URL format:
+# FROM: postgresql://user:pass@host/db?params
+# TO: jdbc:postgresql://host/db?sslmode=require
+# Then set DB_USERNAME and DB_PASSWORD separately
+
