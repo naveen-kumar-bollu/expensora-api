@@ -153,19 +153,19 @@ CREATE TABLE budget (
     user_id UUID NOT NULL,
     category_id UUID,
     amount NUMERIC(19, 2) NOT NULL CHECK (amount >= 0),
-    month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
-    year INTEGER NOT NULL CHECK (year >= 2000),
+    budget_month INTEGER NOT NULL CHECK (budget_month >= 1 AND budget_month <= 12),
+    budget_year INTEGER NOT NULL CHECK (budget_year >= 2000),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_budget_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_budget_category FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE,
-    CONSTRAINT unique_budget_user_category_month_year UNIQUE (user_id, category_id, month, year)
+    CONSTRAINT unique_budget_user_category_month_year UNIQUE (user_id, category_id, budget_month, budget_year)
 );
 
 -- Indexes for efficient queries
 CREATE INDEX idx_budget_user_id ON budget(user_id);
 CREATE INDEX idx_budget_category_id ON budget(category_id);
-CREATE INDEX idx_budget_month_year ON budget(month, year);
+CREATE INDEX idx_budget_month_year ON budget(budget_month, budget_year);
 
 -- ====================================================================================================
 -- Create RECURRING_TRANSACTION table
