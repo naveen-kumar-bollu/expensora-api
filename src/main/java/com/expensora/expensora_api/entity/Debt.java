@@ -1,5 +1,7 @@
 package com.expensora.expensora_api.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,7 +25,7 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class Debt {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,21 +34,31 @@ public class Category {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
+    private DebtType debtType; // CREDIT_CARD, PERSONAL_LOAN, AUTO_LOAN, MORTGAGE, STUDENT_LOAN, OTHER
 
-    private String color; // Hex color code
+    private BigDecimal principalAmount;
 
-    private String icon; // Icon name or emoji
+    private BigDecimal currentBalance;
 
-    private Boolean isDefault; // System default category
+    private BigDecimal interestRate; // Annual percentage
 
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
+    private BigDecimal minimumPayment;
+
+    private LocalDate startDate;
+
+    private LocalDate targetPayoffDate;
+
+    private String notes;
+
+    private Boolean isActive;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
 
     @CreatedDate
     private LocalDateTime createdAt;

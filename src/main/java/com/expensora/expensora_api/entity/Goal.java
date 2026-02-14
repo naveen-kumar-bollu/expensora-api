@@ -1,5 +1,7 @@
 package com.expensora.expensora_api.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -23,35 +25,40 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class Goal {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private String name;
-
-    @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
-
-    private String color; // Hex color code
-
-    private String icon; // Icon name or emoji
-
-    private Boolean isDefault; // System default category
-
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    private String name;
+
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    private GoalType goalType;
+
+    private BigDecimal targetAmount;
+
+    private BigDecimal currentAmount;
+
+    private LocalDate targetDate;
+
+    private String icon; // Icon name or emoji
+
+    private String color; // Hex color code
+
+    private Integer priority; // 1-5, 1 being highest
+
+    private Boolean completed;
 
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
 }

@@ -1,5 +1,7 @@
 package com.expensora.expensora_api.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,8 +11,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,35 +23,25 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class GoalContribution {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private String name;
-
-    @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
-
-    private String color; // Hex color code
-
-    private String icon; // Icon name or emoji
-
-    private Boolean isDefault; // System default category
-
     @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
+    @JoinColumn(name = "goal_id")
+    private Goal goal;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private BigDecimal amount;
+
+    private String notes;
+
+    private LocalDate contributionDate;
 
     @CreatedDate
     private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
 }

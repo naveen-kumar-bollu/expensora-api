@@ -7,6 +7,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
@@ -23,26 +24,30 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class ImportHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private String name;
+    private String fileName;
 
     @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
+    private ImportFormat format; // BANK_CSV, MINT_CSV, YNAB4, CUSTOM_CSV
 
-    private String color; // Hex color code
+    private Integer totalRecords;
 
-    private String icon; // Icon name or emoji
+    private Integer successfulRecords;
 
-    private Boolean isDefault; // System default category
+    private Integer failedRecords;
 
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
+    private Integer duplicateRecords;
+
+    @Column(columnDefinition = "TEXT")
+    private String errorLog;
+
+    @Enumerated(EnumType.STRING)
+    private ImportStatus status; // PROCESSING, COMPLETED, FAILED
 
     @ManyToOne
     @JoinColumn(name = "user_id")

@@ -10,6 +10,8 @@ public class ExpenseCreateRequestDto {
     private LocalDate expenseDate;
     private String notes;
     private String tags;
+    private Boolean isTaxDeductible;
+    private String taxCategory;
 
     // getters and setters
     public BigDecimal getAmount() { return amount; }
@@ -24,4 +26,8 @@ public class ExpenseCreateRequestDto {
     public void setNotes(String notes) { this.notes = notes; }
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
+    public Boolean getIsTaxDeductible() { return isTaxDeductible; }
+    public void setIsTaxDeductible(Boolean isTaxDeductible) { this.isTaxDeductible = isTaxDeductible; }
+    public String getTaxCategory() { return taxCategory; }
+    public void setTaxCategory(String taxCategory) { this.taxCategory = taxCategory; }
 }

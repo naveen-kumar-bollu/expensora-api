@@ -41,11 +41,19 @@ public class Expense {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
+
     private LocalDate expenseDate;
 
     private String notes;
 
     private String tags; // Comma-separated tags
+
+    private Boolean isTaxDeductible; // For tax planning
+
+    private String taxCategory; // Business, Medical, Charity, etc.
 
     @CreatedDate
     private LocalDateTime createdAt;

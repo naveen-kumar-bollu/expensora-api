@@ -15,6 +15,8 @@ public class ExpenseDto {
     private LocalDate expenseDate;
     private String notes;
     private String tags;
+    private Boolean isTaxDeductible;
+    private String taxCategory;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -37,6 +39,10 @@ public class ExpenseDto {
     public void setNotes(String notes) { this.notes = notes; }
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
+    public Boolean getIsTaxDeductible() { return isTaxDeductible; }
+    public void setIsTaxDeductible(Boolean isTaxDeductible) { this.isTaxDeductible = isTaxDeductible; }
+    public String getTaxCategory() { return taxCategory; }
+    public void setTaxCategory(String taxCategory) { this.taxCategory = taxCategory; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

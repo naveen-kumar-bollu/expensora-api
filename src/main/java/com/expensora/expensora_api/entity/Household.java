@@ -9,8 +9,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +21,7 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class Household {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,22 +29,13 @@ public class Category {
 
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
-
-    private String color; // Hex color code
-
-    private String icon; // Icon name or emoji
-
-    private Boolean isDefault; // System default category
+    private String description;
 
     @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
+    @JoinColumn(name = "owner_id")
+    private User owner;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    private Boolean isActive;
 
     @CreatedDate
     private LocalDateTime createdAt;

@@ -23,30 +23,24 @@ import lombok.Setter;
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
-public class Category {
+public class UserHousehold {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private String name;
-
-    @Enumerated(EnumType.STRING)
-    private CategoryType type; // INCOME or EXPENSE
-
-    private String color; // Hex color code
-
-    private String icon; // Icon name or emoji
-
-    private Boolean isDefault; // System default category
-
-    @ManyToOne
-    @JoinColumn(name = "parent_id")
-    private Category parent; // For subcategories
-
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "household_id")
+    private Household household;
+
+    @Enumerated(EnumType.STRING)
+    private HouseholdRole role; // ADMIN, EDITOR, VIEWER
+
+    private Boolean isActive;
 
     @CreatedDate
     private LocalDateTime createdAt;
