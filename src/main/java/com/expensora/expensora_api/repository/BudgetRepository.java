@@ -10,11 +10,11 @@ import java.util.UUID;
 
 public interface BudgetRepository extends JpaRepository<Budget, UUID> {
 
-    List<Budget> findByUserIdAndMonthAndYear(UUID userId, Integer month, Integer year);
+    List<Budget> findByUserIdAndBudgetMonthAndBudgetYear(UUID userId, Integer budgetMonth, Integer budgetYear);
 
-    Optional<Budget> findByUserIdAndCategoryIdAndMonthAndYear(UUID userId, UUID categoryId, Integer month, Integer year);
+    Optional<Budget> findByUserIdAndCategoryIdAndBudgetMonthAndBudgetYear(UUID userId, UUID categoryId, Integer budgetMonth, Integer budgetYear);
 
-    @Query("SELECT b FROM Budget b WHERE b.user.id = :userId AND b.category.id = :categoryId ORDER BY b.year DESC, b.month DESC")
+    @Query("SELECT b FROM Budget b WHERE b.user.id = :userId AND b.category.id = :categoryId ORDER BY b.budgetYear DESC, b.budgetMonth DESC")
     List<Budget> findBudgetHistory(UUID userId, UUID categoryId);
 
 }

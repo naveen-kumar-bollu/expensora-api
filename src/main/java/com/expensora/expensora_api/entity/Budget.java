@@ -39,11 +39,9 @@ public class Budget {
 
     private BigDecimal amount;
 
-    @Column(name = "budget_month")
-    private Integer month; // 1-12
+    private Integer budgetMonth; // 1-12
 
-    @Column(name = "budget_year")
-    private Integer year;
+    private Integer budgetYear;
 
     @CreatedDate
     private LocalDateTime createdAt;

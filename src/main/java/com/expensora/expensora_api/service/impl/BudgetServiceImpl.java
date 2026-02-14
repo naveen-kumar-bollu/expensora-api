@@ -45,7 +45,7 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public List<BudgetDto> getBudgetsForMonth(UUID userId, int month, int year) {
-        List<Budget> budgets = budgetRepository.findByUserIdAndMonthAndYear(userId, month, year);
+        List<Budget> budgets = budgetRepository.findByUserIdAndBudgetMonthAndBudgetYear(userId, month, year);
         
         return budgets.stream().map(budget -> {
             BigDecimal spent = getSpentAmount(userId, budget.getCategory().getId(), month, year);
@@ -55,8 +55,8 @@ public class BudgetServiceImpl implements BudgetService {
             dto.setCategoryId(budget.getCategory().getId());
             dto.setCategoryName(budget.getCategory().getName());
             dto.setAmount(budget.getAmount());
-            dto.setMonth(budget.getMonth());
-            dto.setYear(budget.getYear());
+            dto.setMonth(budget.getBudgetMonth());
+            dto.setYear(budget.getBudgetYear());
             dto.setSpent(spent);
             dto.setPercentage(calculatePercentage(spent, budget.getAmount()));
             return dto;
