@@ -18,8 +18,8 @@ public class BudgetDto {
     private UUID categoryId;
     private String categoryName;
     private BigDecimal amount;
-    private Integer month;
-    private Integer year;
+    private Integer budgetMonth;
+    private Integer budgetYear;
     private BigDecimal spent;
     private Double percentage;
 }

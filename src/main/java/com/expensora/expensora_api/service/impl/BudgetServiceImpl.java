@@ -55,8 +55,8 @@ public class BudgetServiceImpl implements BudgetService {
             dto.setCategoryId(budget.getCategory().getId());
             dto.setCategoryName(budget.getCategory().getName());
             dto.setAmount(budget.getAmount());
-            dto.setMonth(budget.getBudgetMonth());
-            dto.setYear(budget.getBudgetYear());
+            dto.setBudgetMonth(budget.getBudgetMonth());
+            dto.setBudgetYear(budget.getBudgetYear());
             dto.setSpent(spent);
             dto.setPercentage(calculatePercentage(spent, budget.getAmount()));
             return dto;

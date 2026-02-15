@@ -15,6 +15,6 @@ import java.util.UUID;
 public class BudgetCreateRequestDto {
     private UUID categoryId;
     private BigDecimal amount;
-    private Integer month;
-    private Integer year;
+    private Integer budgetMonth;
+    private Integer budgetYear;
 }

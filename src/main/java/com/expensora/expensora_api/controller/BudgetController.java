@@ -53,8 +53,8 @@ public class BudgetController {
         budget.setUser(user);
         budget.setCategory(category);
         budget.setAmount(dto.getAmount());
-        budget.setBudgetMonth(dto.getMonth());
-        budget.setBudgetYear(dto.getYear());
+        budget.setBudgetMonth(dto.getBudgetMonth());
+        budget.setBudgetYear(dto.getBudgetYear());
 
         Budget saved = budgetService.createBudget(budget);
         return ResponseEntity.ok(saved);
