@@ -80,6 +80,10 @@ public class HouseholdServiceImpl implements HouseholdService {
             throw new RuntimeException("Unauthorized");
         }
 
+        // Delete all user-household associations first
+        List<UserHousehold> userHouseholds = userHouseholdRepository.findByHousehold(household);
+        userHouseholdRepository.deleteAll(userHouseholds);
+
         householdRepository.delete(household);
     }
 

@@ -60,6 +60,21 @@ public class IncomeController {
         return ResponseEntity.ok(incomeMapper.toDto(saved));
     }
 
+    @PostMapping("/bulk-delete")
+    @Operation(summary = "Bulk delete incomes", description = "Delete multiple incomes at once by providing a list of IDs")
+    public ResponseEntity<Void> bulkDelete(@RequestBody java.util.List<UUID> ids) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+
+        for (UUID id : ids) {
+            Income income = incomeService.findById(id).orElse(null);
+            if (income != null && income.getUser().getId().equals(user.getId())) {
+                incomeService.deleteById(id);
+            }
+        }
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     @Operation(summary = "Get incomes with filters", description = "Get paginated incomes with optional filters (date range, category)")
     public ResponseEntity<Page<IncomeDto>> getIncomes(

@@ -11,6 +11,12 @@
 -- ====================================================================================================
 -- Drop existing tables (in correct order to handle foreign key constraints)
 -- ====================================================================================================
+DROP TABLE IF EXISTS user_challenge CASCADE;
+DROP TABLE IF EXISTS challenge CASCADE;
+DROP TABLE IF EXISTS user_achievement CASCADE;
+DROP TABLE IF EXISTS achievement CASCADE;
+DROP TABLE IF EXISTS transaction_split CASCADE;
+DROP TABLE IF EXISTS interpersonal_debt CASCADE;
 DROP TABLE IF EXISTS debt_payment CASCADE;
 DROP TABLE IF EXISTS debt CASCADE;
 DROP TABLE IF EXISTS user_household CASCADE;
@@ -79,6 +85,9 @@ CREATE TABLE account (
     initial_balance NUMERIC(19, 2) NOT NULL DEFAULT 0,
     current_balance NUMERIC(19, 2) NOT NULL DEFAULT 0,
     currency VARCHAR(3) DEFAULT 'USD',
+    icon VARCHAR(100), -- Icon name or emoji
+    color VARCHAR(7), -- Hex color code
+    is_default BOOLEAN DEFAULT FALSE, -- Default account for transactions
     active BOOLEAN DEFAULT TRUE,
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -394,6 +403,153 @@ CREATE INDEX idx_import_history_status ON import_history(status);
 CREATE INDEX idx_import_history_created_at ON import_history(created_at);
 
 -- ====================================================================================================
+-- Create TRANSACTION_SPLIT table (Feature 19: Split Transactions)
+-- ====================================================================================================
+CREATE TABLE transaction_split (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    expense_id UUID,
+    income_id UUID,
+    category_id UUID NOT NULL,
+    amount NUMERIC(19, 2) NOT NULL CHECK (amount > 0),
+    percentage NUMERIC(5, 2),
+    description VARCHAR(500),
+    user_id UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_split_expense FOREIGN KEY (expense_id) REFERENCES expense(id) ON DELETE CASCADE,
+    CONSTRAINT fk_split_income FOREIGN KEY (income_id) REFERENCES income(id) ON DELETE CASCADE,
+    CONSTRAINT fk_split_category FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE,
+    CONSTRAINT fk_split_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT check_transaction_type CHECK ((expense_id IS NOT NULL AND income_id IS NULL) OR (expense_id IS NULL AND income_id IS NOT NULL))
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_split_expense_id ON transaction_split(expense_id);
+CREATE INDEX idx_split_income_id ON transaction_split(income_id);
+CREATE INDEX idx_split_user_id ON transaction_split(user_id);
+CREATE INDEX idx_split_category_id ON transaction_split(category_id);
+
+-- ====================================================================================================
+-- Create INTERPERSONAL_DEBT table (Feature 19: Split Transactions - Interpersonal debts)
+-- ====================================================================================================
+CREATE TABLE interpersonal_debt (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    creditor_user_id UUID NOT NULL, -- User who is owed money
+    debtor_user_id UUID NOT NULL, -- User who owes money
+    amount NUMERIC(19, 2) NOT NULL CHECK (amount >= 0),
+    original_amount NUMERIC(19, 2) NOT NULL CHECK (original_amount > 0),
+    description VARCHAR(500),
+    expense_id UUID, -- Link to the original split expense
+    is_settled BOOLEAN DEFAULT FALSE,
+    settled_date DATE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_interpersonal_debt_creditor FOREIGN KEY (creditor_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_interpersonal_debt_debtor FOREIGN KEY (debtor_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_interpersonal_debt_expense FOREIGN KEY (expense_id) REFERENCES expense(id) ON DELETE SET NULL,
+    CONSTRAINT check_different_users CHECK (creditor_user_id != debtor_user_id)
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_interpersonal_debt_creditor ON interpersonal_debt(creditor_user_id);
+CREATE INDEX idx_interpersonal_debt_debtor ON interpersonal_debt(debtor_user_id);
+CREATE INDEX idx_interpersonal_debt_settled ON interpersonal_debt(is_settled);
+CREATE INDEX idx_interpersonal_debt_expense ON interpersonal_debt(expense_id);
+
+-- ====================================================================================================
+-- Create ACHIEVEMENT table (Feature 21: Gamification)
+-- ====================================================================================================
+CREATE TABLE achievement (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT NOT NULL,
+    icon VARCHAR(100),
+    badge_color VARCHAR(7),
+    points INTEGER NOT NULL DEFAULT 0,
+    achievement_type VARCHAR(50) NOT NULL CHECK (achievement_type IN ('STREAK', 'BUDGET', 'SAVINGS', 'DEBT', 'GOAL', 'USAGE', 'MILESTONE')),
+    criteria_type VARCHAR(50) NOT NULL CHECK (criteria_type IN ('CONSECUTIVE_DAYS', 'BUDGET_ADHERENCE', 'SAVINGS_RATE', 'DEBT_PAYOFF', 'GOAL_COMPLETION', 'TRANSACTION_COUNT', 'AMOUNT_SAVED')),
+    criteria_value NUMERIC(19, 2), -- The threshold value for criteria
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for efficient queries
+CREATE INDEX idx_achievement_type ON achievement(achievement_type);
+CREATE INDEX idx_achievement_active ON achievement(is_active);
+
+-- ====================================================================================================
+-- Create USER_ACHIEVEMENT table (Feature 21: Gamification)
+-- ====================================================================================================
+CREATE TABLE user_achievement (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    achievement_id UUID NOT NULL,
+    earned_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    progress NUMERIC(5, 2) DEFAULT 100.00, -- Percentage of achievement completion
+    is_notified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_achievement_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_achievement_achievement FOREIGN KEY (achievement_id) REFERENCES achievement(id) ON DELETE CASCADE,
+    CONSTRAINT unique_user_achievement UNIQUE (user_id, achievement_id)
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_user_achievement_user_id ON user_achievement(user_id);
+CREATE INDEX idx_user_achievement_achievement_id ON user_achievement(achievement_id);
+CREATE INDEX idx_user_achievement_earned_date ON user_achievement(earned_date);
+
+-- ====================================================================================================
+-- Create CHALLENGE table (Feature 21: Gamification)
+-- ====================================================================================================
+CREATE TABLE challenge (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    challenge_type VARCHAR(50) NOT NULL CHECK (challenge_type IN ('SAVINGS', 'BUDGET', 'NO_SPEND', 'INCOME', 'GOAL', 'CUSTOM')),
+    target_amount NUMERIC(19, 2),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    points_reward INTEGER NOT NULL DEFAULT 0,
+    icon VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE,
+    is_global BOOLEAN DEFAULT TRUE, -- Whether all users can join
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT check_challenge_dates CHECK (end_date >= start_date)
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_challenge_type ON challenge(challenge_type);
+CREATE INDEX idx_challenge_active ON challenge(is_active);
+CREATE INDEX idx_challenge_dates ON challenge(start_date, end_date);
+
+-- ====================================================================================================
+-- Create USER_CHALLENGE table (Feature 21: Gamification)
+-- ====================================================================================================
+CREATE TABLE user_challenge (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    challenge_id UUID NOT NULL,
+    current_progress NUMERIC(19, 2) DEFAULT 0,
+    target_progress NUMERIC(19, 2),
+    is_completed BOOLEAN DEFAULT FALSE,
+    completion_date TIMESTAMP,
+    points_earned INTEGER DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_challenge_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_challenge_challenge FOREIGN KEY (challenge_id) REFERENCES challenge(id) ON DELETE CASCADE,
+    CONSTRAINT unique_user_challenge UNIQUE (user_id, challenge_id)
+);
+
+-- Indexes for efficient queries
+CREATE INDEX idx_user_challenge_user_id ON user_challenge(user_id);
+CREATE INDEX idx_user_challenge_challenge_id ON user_challenge(challenge_id);
+CREATE INDEX idx_user_challenge_completed ON user_challenge(is_completed);
+
+-- ====================================================================================================
 -- Insert Default Categories (System Categories)
 -- ====================================================================================================
 
@@ -487,13 +643,105 @@ CREATE TRIGGER update_user_household_updated_at BEFORE UPDATE ON user_household
 CREATE TRIGGER update_import_history_updated_at BEFORE UPDATE ON import_history
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_transaction_split_updated_at BEFORE UPDATE ON transaction_split
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_interpersonal_debt_updated_at BEFORE UPDATE ON interpersonal_debt
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_achievement_updated_at BEFORE UPDATE ON achievement
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_achievement_updated_at BEFORE UPDATE ON user_achievement
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_challenge_updated_at BEFORE UPDATE ON challenge
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_challenge_updated_at BEFORE UPDATE ON user_challenge
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ====================================================================================================
+-- Insert Default Achievements (Feature 21: Gamification)
+-- ====================================================================================================
+
+INSERT INTO achievement (name, description, icon, badge_color, points, achievement_type, criteria_type, criteria_value) VALUES
+('First 30 Days', 'Use the app for 30 consecutive days', '🎯', '#4CAF50', 100, 'USAGE', 'CONSECUTIVE_DAYS', 30),
+('Budget Master', 'Stay within budget for 3 consecutive months', '💪', '#2196F3', 200, 'BUDGET', 'BUDGET_ADHERENCE', 3),
+('Savings Superstar', 'Save 20% or more of your income', '⭐', '#FFC107', 150, 'SAVINGS', 'SAVINGS_RATE', 20),
+('Debt Crusher', 'Successfully pay off a debt', '🔨', '#F44336', 250, 'DEBT', 'DEBT_PAYOFF', 1),
+('Century Saver', 'Save $100 or more in a single month', '💯', '#9C27B0', 100, 'SAVINGS', 'AMOUNT_SAVED', 100),
+('Goal Getter', 'Complete your first savings goal', '🎯', '#00BCD4', 150, 'GOAL', 'GOAL_COMPLETION', 1),
+('Transaction Tracker', 'Record 100 transactions', '📊', '#795548', 100, 'USAGE', 'TRANSACTION_COUNT', 100),
+('Early Bird', 'Record your first transaction within 24 hours of signing up', '🐦', '#FFEB3B', 50, 'MILESTONE', 'TRANSACTION_COUNT', 1),
+('Budget Beginner', 'Create your first budget', '📝', '#8BC34A', 50, 'MILESTONE', 'BUDGET_ADHERENCE', 1),
+('Triple Goal Winner', 'Complete 3 financial goals', '🏆', '#FF9800', 300, 'GOAL', 'GOAL_COMPLETION', 3),
+('Six Month Streak', 'Use the app for 180 consecutive days', '🔥', '#E91E63', 500, 'STREAK', 'CONSECUTIVE_DAYS', 180),
+('Year Long Warrior', 'Use the app for 365 consecutive days', '👑', '#673AB7', 1000, 'STREAK', 'CONSECUTIVE_DAYS', 365),
+('Super Saver', 'Save $1,000 or more in a single month', '💎', '#3F51B5', 300, 'SAVINGS', 'AMOUNT_SAVED', 1000),
+('Budget Champion', 'Stay within budget for 6 consecutive months', '🏅', '#009688', 400, 'BUDGET', 'BUDGET_ADHERENCE', 6),
+('Debt Free', 'Pay off all your debts', '🎊', '#CDDC39', 500, 'DEBT', 'DEBT_PAYOFF', 999); -- 999 means all debts
+
 -- ====================================================================================================
 -- Sample Data (Optional - Remove if not needed)
 -- ====================================================================================================
 
--- Create a test user (password is 'password123' - you should hash this in production)
--- INSERT INTO users (name, email, password, role) 
--- VALUES ('Test User', 'test@expensora.com', '$2a$10$XPT6SYLhXGzR0vNnL7y7EO5K7Y0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0Z0', 'USER');
+-- Create a test user (password is 'password' - you should hash this in production)
+INSERT INTO users (id, name, email, password, role) 
+VALUES ('550e8400-e29b-41d4-a716-446655440000', 'Test User', 'test@expensora.com', '$2b$12$CG/utaylcjUmC3YWXhf9G.jNknv79Z.7.I3CIqkPAgh0M5qu3bEja', 'USER')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    email = EXCLUDED.email,
+    password = EXCLUDED.password,
+    role = EXCLUDED.role;
+
+-- Sample accounts for test user
+INSERT INTO account (id, name, account_type, initial_balance, current_balance, currency, icon, color, is_default, active, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655440001', 'Main Checking', 'BANK_CHECKING', 0.00, 5000.00, 'USD', '🏦', '#4CAF50', TRUE, TRUE, '550e8400-e29b-41d4-a716-446655440000'),
+('550e8400-e29b-41d4-a716-446655440002', 'Savings Account', 'BANK_SAVINGS', 0.00, 10000.00, 'USD', '💰', '#2196F3', FALSE, TRUE, '550e8400-e29b-41d4-a716-446655440000'),
+('550e8400-e29b-41d4-a716-446655440003', 'Credit Card', 'CREDIT_CARD', 0.00, -500.00, 'USD', '💳', '#F44336', FALSE, TRUE, '550e8400-e29b-41d4-a716-446655440000')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample expenses for test user
+INSERT INTO expense (id, amount, description, expense_date, category_id, user_id, account_id) VALUES
+('550e8400-e29b-41d4-a716-446655440010', 25.50, 'Lunch at restaurant', '2026-02-10', (SELECT id FROM category WHERE name = 'Food & Dining' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'),
+('550e8400-e29b-41d4-a716-446655440011', 50.00, 'Gas for car', '2026-02-09', (SELECT id FROM category WHERE name = 'Transportation' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'),
+('550e8400-e29b-41d4-a716-446655440012', 100.00, 'Movie tickets', '2026-02-08', (SELECT id FROM category WHERE name = 'Entertainment' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440003')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample incomes for test user
+INSERT INTO income (id, amount, description, income_date, category_id, user_id, account_id) VALUES
+('550e8400-e29b-41d4-a716-446655440020', 3000.00, 'Monthly salary', '2026-02-01', (SELECT id FROM category WHERE name = 'Salary' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'),
+('550e8400-e29b-41d4-a716-446655440021', 500.00, 'Freelance project', '2026-02-05', (SELECT id FROM category WHERE name = 'Freelance' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample budgets for test user
+INSERT INTO budget (id, amount, budget_month, budget_year, category_id, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655440030', 400.00, 2, 2026, (SELECT id FROM category WHERE name = 'Food & Dining' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000'),
+('550e8400-e29b-41d4-a716-446655440031', 200.00, 2, 2026, (SELECT id FROM category WHERE name = 'Entertainment' AND is_default = TRUE LIMIT 1), '550e8400-e29b-41d4-a716-446655440000')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample goals for test user
+INSERT INTO goal (id, name, description, goal_type, target_amount, current_amount, target_date, priority, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655440040', 'Emergency Fund', 'Save for emergencies', 'SAVINGS', 5000.00, 1000.00, '2026-12-31', 1, '550e8400-e29b-41d4-a716-446655440000'),
+('550e8400-e29b-41d4-a716-446655440041', 'Vacation Fund', 'Save for summer vacation', 'SAVINGS', 2000.00, 500.00, '2026-06-01', 2, '550e8400-e29b-41d4-a716-446655440000')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample debts for test user
+INSERT INTO debt (id, name, debt_type, principal_amount, current_balance, interest_rate, minimum_payment, start_date, target_payoff_date, user_id) VALUES
+('550e8400-e29b-41d4-a716-446655440050', 'Student Loan', 'STUDENT_LOAN', 15000.00, 12000.00, 5.5, 200.00, '2020-09-01', '2026-09-01', '550e8400-e29b-41d4-a716-446655440000'),
+('550e8400-e29b-41d4-a716-446655440051', 'Car Loan', 'AUTO_LOAN', 8000.00, 6000.00, 4.2, 150.00, '2023-01-01', '2027-01-01', '550e8400-e29b-41d4-a716-446655440000')
+ON CONFLICT (id) DO NOTHING;
+
+-- Sample household for test user
+INSERT INTO household (id, name, description, owner_id) VALUES
+('550e8400-e29b-41d4-a716-446655440060', 'My Family', 'Family household for shared expenses', '550e8400-e29b-41d4-a716-446655440000')
+ON CONFLICT (id) DO NOTHING;
+
+-- User-household association
+INSERT INTO user_household (id, user_id, household_id, role) VALUES
+('550e8400-e29b-41d4-a716-446655440061', '550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440060', 'ADMIN')
+ON CONFLICT (id) DO NOTHING;
 
 -- ====================================================================================================
 -- Verification Queries
@@ -519,8 +767,14 @@ UNION ALL SELECT 'debt', COUNT(*) FROM debt
 UNION ALL SELECT 'debt_payment', COUNT(*) FROM debt_payment
 UNION ALL SELECT 'household', COUNT(*) FROM household
 UNION ALL SELECT 'user_household', COUNT(*) FROM user_household
-UNION ALL SELECT 'import_history', COUNT(*) FROM import_history;
-
+UNION ALL SELECT 'import_history', COUNT(*) FROM import_history
+UNION ALL SELECT 'transaction_split', COUNT(*) FROM transaction_split
+UNION ALL SELECT 'interpersonal_debt', COUNT(*) FROM interpersonal_debt
+UNION ALL SELECT 'achievement', COUNT(*) FROM achievement
+UNION ALL SELECT 'user_achievement', COUNT(*) FROM user_achievement
+UNION ALL SELECT 'challenge', COUNT(*) FROM challenge
+UNION ALL SELECT 'user_challenge', COUNT(*) FROM user_challenge;
+select * from users;
 -- ====================================================================================================
 -- End of Schema Script
 -- ====================================================================================================

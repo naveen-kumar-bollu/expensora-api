@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface GoalRepository extends JpaRepository<Goal, UUID> {
+    List<Goal> findByUserId(UUID userId);
     List<Goal> findByUserIdOrderByPriorityAscCreatedAtDesc(UUID userId);
     List<Goal> findByUserIdAndCompletedFalseOrderByPriorityAscCreatedAtDesc(UUID userId);
     List<Goal> findByUserIdAndCompletedTrueOrderByUpdatedAtDesc(UUID userId);

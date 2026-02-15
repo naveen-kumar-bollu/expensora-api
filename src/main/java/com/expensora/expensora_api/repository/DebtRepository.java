@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface DebtRepository extends JpaRepository<Debt, UUID> {
+    List<Debt> findByUserId(UUID userId);
     List<Debt> findByUserAndIsActiveTrue(User user);
     List<Debt> findByUser(User user);
 }
