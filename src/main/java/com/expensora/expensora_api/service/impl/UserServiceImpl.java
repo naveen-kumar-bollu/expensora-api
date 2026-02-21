@@ -33,6 +33,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User register(RegisterRequestDto dto) {
+        if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already registered");
+        }
         User user = new User();
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());

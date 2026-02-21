@@ -51,7 +51,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/", "/health").permitAll()
+                .requestMatchers("/", "/health", "/error").permitAll()
                 .requestMatchers("/auth/register", "/auth/login", "/auth/refresh").permitAll()
                 .requestMatchers("/actuator/**", "/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/v3/api-docs", "/swagger-resources/**", "/webjars/**").permitAll()

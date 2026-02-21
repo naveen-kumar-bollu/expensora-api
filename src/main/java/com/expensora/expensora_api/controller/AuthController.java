@@ -1,10 +1,12 @@
 package com.expensora.expensora_api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,6 +30,8 @@ import com.expensora.expensora_api.util.JwtUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "Authentication", description = "Authentication management APIs")
@@ -47,22 +51,30 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Create a new user account and return authentication tokens")
-    public ResponseEntity<AuthResponseDto> register(@RequestBody RegisterRequestDto dto) {
-        User user = userService.register(dto);
-        String token = jwtUtil.generateToken(user.getEmail());
-        String refreshToken = userService.generateRefreshToken(user.getEmail());
-        return ResponseEntity.ok(new AuthResponseDto(token, refreshToken));
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDto dto) {
+        try {
+            User user = userService.register(dto);
+            String token = jwtUtil.generateToken(user.getEmail());
+            String refreshToken = userService.generateRefreshToken(user.getEmail());
+            return ResponseEntity.ok(new AuthResponseDto(token, refreshToken));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticate user and return JWT tokens")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody LoginRequestDto dto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
-        );
-        String token = jwtUtil.generateToken(authentication.getName());
-        String refreshToken = userService.generateRefreshToken(authentication.getName());
-        return ResponseEntity.ok(new AuthResponseDto(token, refreshToken));
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto dto) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword())
+            );
+            String token = jwtUtil.generateToken(authentication.getName());
+            String refreshToken = userService.generateRefreshToken(authentication.getName());
+            return ResponseEntity.ok(new AuthResponseDto(token, refreshToken));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid email or password"));
+        }
     }
 
     @PostMapping("/refresh")
