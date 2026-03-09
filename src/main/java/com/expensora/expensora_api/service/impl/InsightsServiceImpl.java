@@ -1,23 +1,22 @@
 package com.expensora.expensora_api.service.impl;
 
-import com.expensora.expensora_api.dto.CategoryBreakdownDto;
-import com.expensora.expensora_api.dto.DashboardSummaryDto;
-import com.expensora.expensora_api.dto.InsightsDto;
-import com.expensora.expensora_api.entity.Expense;
-import com.expensora.expensora_api.repository.ExpenseRepository;
-import com.expensora.expensora_api.service.DashboardService;
-import com.expensora.expensora_api.service.InsightsService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.expensora.expensora_api.dto.CategoryBreakdownDto;
+import com.expensora.expensora_api.dto.DashboardSummaryDto;
+import com.expensora.expensora_api.dto.InsightsDto;
+import com.expensora.expensora_api.repository.ExpenseRepository;
+import com.expensora.expensora_api.service.DashboardService;
+import com.expensora.expensora_api.service.InsightsService;
 
 @Service
 public class InsightsServiceImpl implements InsightsService {

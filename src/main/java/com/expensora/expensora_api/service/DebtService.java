@@ -1,11 +1,10 @@
 package com.expensora.expensora_api.service;
 
-import com.expensora.expensora_api.dto.DebtCreateRequestDto;
-import com.expensora.expensora_api.dto.DebtDto;
-import com.expensora.expensora_api.entity.Debt;
-
 import java.util.List;
 import java.util.UUID;
+
+import com.expensora.expensora_api.dto.DebtCreateRequestDto;
+import com.expensora.expensora_api.dto.DebtDto;
 
 public interface DebtService {
     DebtDto createDebt(DebtCreateRequestDto request, UUID userId);
